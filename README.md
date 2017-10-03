@@ -12,7 +12,7 @@ You can just run the make to see the test.
 ### proto file
 ```json
 {
-  // 双下划线命名有本描述文件保留，有特殊含义，请避免使用
+  // 双下划线命名由本描述文件保留，有特殊含义，请避免使用
   // 宏（类型常量）定义
   "__macros": {
     "__namespace": "GameEnum",  // 枚举值命名空间
