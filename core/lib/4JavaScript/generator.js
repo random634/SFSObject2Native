@@ -152,10 +152,11 @@ function _encodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
       } else {
        outputString += ' '.repeat(indent) + 'let ' + _parser + ' = require("' + _type + 'Parser' + '");\n';
       }
+
       if (!inArray) {
         let _outObj = outObj + '_' + key;
         outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = ' + _parser + '.encode(' + inObj + ');\n';
-        outputString += ' '.repeat(indent) + outObj + '.put(' + _outObj + ', ' + map.getTypeId('object') + ');\n'; // must be a object
+        outputString += ' '.repeat(indent) + outObj + '.put("' + key + '", ' + _outObj + ', ' + map.getTypeId('object') + ');\n'; // must be a object
       } else {
         let _outObj = outObj + '_' + key;
         outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = ' + _parser + '.encode(' + inObj + ');\n';
