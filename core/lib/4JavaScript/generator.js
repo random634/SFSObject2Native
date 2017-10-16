@@ -155,11 +155,11 @@ function _encodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
 
       if (!inArray) {
         let _outObj = outObj + '_' + key;
-        outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = ' + _parser + '.encode(' + inObj + ');\n';
+        outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = ' + _parser + '.encode(' + inObj + ', ' + tagMap + ');\n';
         outputString += ' '.repeat(indent) + outObj + '.put("' + key + '", ' + _outObj + ', ' + map.getTypeId('object') + ');\n'; // must be a object
       } else {
         let _outObj = outObj + '_' + key;
-        outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = ' + _parser + '.encode(' + inObj + ');\n';
+        outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = ' + _parser + '.encode(' + inObj + ', ' + tagMap + ');\n';
         outputString += ' '.repeat(indent) + outObj + '.add(' + _outObj + ', ' + map.getTypeId('object') + ');\n'; // must be a object
       }
     }
@@ -307,7 +307,7 @@ function _decodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
         outputString += ' '.repeat(indent + 2) + 'let ' + _parser + ' = require("' + _type + 'Parser' + '");\n';
       }
       
-      outputString += ' '.repeat(indent + 2) + _outObj + ' = ' + _parser + '.decode(' + _inObj + ');\n';
+      outputString += ' '.repeat(indent + 2) + _outObj + ' = ' + _parser + '.decode(' + _inObj + ', ' + tagMap + ');\n';
       outputString += ' '.repeat(indent) + '}\n';
 
       if (!inArray) {
@@ -342,13 +342,13 @@ let _generateCommon = function (data, outputDir, recordFileMap) {
       }
 
       // common struct proto
-      outputString += 'let _encode = function (dataIn) {\n';
+      outputString += 'let _encode = function (dataIn, tagMap) {\n';
       let _outObj = key;
       let _outObj_tag = _outObj + '_tag';
       let _keys = Object.keys(val);
 
       outputString += '  let ' + _outObj + ' = new SFS2X.SFSObject();\n';
-      outputString += '  let ' + _outObj_tag + ' = {};\n';      
+      outputString += '  let ' + _outObj_tag + ' = tagMap || {};\n';      
       for (let i = 0; i < _keys.length; i++) {
         let _key = _keys[i];
         let _val = val[_key];
@@ -360,9 +360,9 @@ let _generateCommon = function (data, outputDir, recordFileMap) {
       outputString += '};\n';
       outputString += 'module.exports["encode"] = _encode;\n\n';
 
-      outputString += 'let _decode = function (dataIn) {\n';
+      outputString += 'let _decode = function (dataIn, tagMap) {\n';
       outputString += '  let ' + _outObj + ' = {};\n';
-      outputString += '  let ' + _outObj_tag + ' = {};\n';
+      outputString += '  let ' + _outObj_tag + ' = tagMap || {};\n';
       for (let i = 0; i < _keys.length; i++) {
         let _key = _keys[i];
         let _val = val[_key];
@@ -408,9 +408,9 @@ let _generateRPC = function (data, outputDir, recordFileMap) {
         let _keys = Object.keys(val.__req);
 
         outputString += 'let _req = {\n';
-        outputString += '  encode: function (dataIn) {\n';
+        outputString += '  encode: function (dataIn, tagMap) {\n';
         outputString += '    let ' + _outObj + ' = new SFS2X.SFSObject();\n';
-        outputString += '    let ' + _outObj_tag + ' = {};\n';
+        outputString += '    let ' + _outObj_tag + ' = tagMap || {};\n';
         for (let i = 0; i < _keys.length; i++) {
           let _key = _keys[i];
           let _val = val.__req[_key];
@@ -421,9 +421,9 @@ let _generateRPC = function (data, outputDir, recordFileMap) {
         outputString += '    return ' + _outObj + ';\n';
         outputString += '  },\n\n';
 
-        outputString += '  decode: function (dataIn) {\n';
+        outputString += '  decode: function (dataIn, tagMap) {\n';
         outputString += '    let ' + _outObj + ' = {};\n';
-        outputString += '    let ' + _outObj_tag + ' = {};\n';
+        outputString += '    let ' + _outObj_tag + ' = tagMap || {};\n';
         for (let i = 0; i < _keys.length; i++) {
           let _key = _keys[i];
           let _val = val.__req[_key];
@@ -444,9 +444,9 @@ let _generateRPC = function (data, outputDir, recordFileMap) {
         let _keys = Object.keys(val.__rsp);
 
         outputString += 'let _rsp = {\n';
-        outputString += '  encode: function (dataIn) {\n';
+        outputString += '  encode: function (dataIn, tagMap) {\n';
         outputString += '    let ' + _outObj + ' = new SFS2X.SFSObject();\n';
-        outputString += '    let ' + _outObj_tag + ' = {};\n';
+        outputString += '    let ' + _outObj_tag + ' = tagMap || {};\n';
         for (let i = 0; i < _keys.length; i++) {
           let _key = _keys[i];
           let _val = val.__rsp[_key];
@@ -457,9 +457,9 @@ let _generateRPC = function (data, outputDir, recordFileMap) {
         outputString += '    return ' + _outObj + ';\n';
         outputString += '  },\n\n';
 
-        outputString += '  decode: function (dataIn) {\n';
+        outputString += '  decode: function (dataIn, tagMap) {\n';
         outputString += '    let ' + _outObj + ' = {};\n';
-        outputString += '    let ' + _outObj_tag + ' = {};\n';
+        outputString += '    let ' + _outObj_tag + ' = tagMap || {};\n';
         for (let i = 0; i < _keys.length; i++) {
           let _key = _keys[i];
           let _val = val.__rsp[_key];
