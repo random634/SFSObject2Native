@@ -10,7 +10,7 @@ let _recordMacro = {};
 
 let _generateMacros = function (data, outputDir, recordFileMap, recordMacro) {
   mkdir.mkdir(outputDir);
-  
+
   if (data.__macros != null) {
     if (data.__macros.__namespace == null) {
       console.error('_generateMacros macros has no field __namespace fail.')
@@ -110,16 +110,18 @@ function _encodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
   else if (typeof val === 'object') {
     let _outObj = outObj + '_' + key;
     outputString += ' '.repeat(indent) + 'let ' + _outObj + ' = new SFS2X.SFSObject();\n';
-
+    outputString += ' '.repeat(indent) + 'if (' + inObj + ' != null) {\n';
+    
     let _keys = Object.keys(val);
     for (let i = 0; i < _keys.length; i++) {
       let _key = _keys[i];
       let _val = val[_key];
       let _inObj = inObj + '.' + _key;
 
-      outputString += _encodeOneField(_key, _val, _inObj, _outObj, indent, false, tagMap);
+      outputString += _encodeOneField(_key, _val, _inObj, _outObj, indent + 2, false, tagMap);
     }
-
+    outputString += ' '.repeat(indent) + '}\n';
+    
     encoder = map.getEncoder('object');
     outputString += encoder(key, _outObj, outObj, indent, inArray);
     outputString += '\n';
@@ -148,9 +150,9 @@ function _encodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
 
         outputString += ' '.repeat(indent) + 'let ' + _macroFileName + ' = require("' + _macroFile + '");\n';
         outputString += ' '.repeat(indent) + 'let ' + _macroTypeName + ' = ' + _macroFileName + '["' + _macroType + '"];\n';
-        outputString += ' '.repeat(indent) + 'let ' + _parser + ' = require(' + _macroTypeName + '[' + tagMap + '["' + _infos[1].trim() + '"]' + ']' + ');\n';
+        outputString += ' '.repeat(indent) + 'let ' + _parser + ' = require(' + _macroTypeName + '[' + tagMap + '["' + _infos[1].trim() + '"]' + ']'  + ' + "Parser"' + ');\n';
       } else {
-       outputString += ' '.repeat(indent) + 'let ' + _parser + ' = require("' + _type + 'Parser' + '");\n';
+        outputString += ' '.repeat(indent) + 'let ' + _parser + ' = require("' + _type + 'Parser' + '");\n';
       }
 
       if (!inArray) {
@@ -232,21 +234,36 @@ function _decodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
       typeId = map.getTypeId('array');
     } else if (typeof val[0] === 'object') {
       typeId = map.getTypeId('object');
+    } else if (val[0] === 'number') {
+      typeId = -1;
     } else {
       typeId = map.getTypeId(val[0]);
     }
+
     if (typeId == null) {
       typeId = map.getTypeId('object');
     }
-    outputString += ' '.repeat(indent + 4) + 'let ' + _outObj_item_in + ' = ' + _inObj + '.get(' + _outObj_i + ', ' + typeId + ');\n';
 
-    outputString += _decodeOneField(0, val[0], _outObj_item_in, _outObj_item_out, indent + 4, true, tagMap);
+    if (typeId === -1) {
+      outputString += ' '.repeat(indent + 4) + 'let ' + _outObj_item_in + ' = ' + _inObj + '.get(' + _outObj_i + ');\n';
+    }
+    else {
+      outputString += ' '.repeat(indent + 4) + 'let ' + _outObj_item_in + ' = ' + _inObj + '.get(' + _outObj_i + ', ' + typeId + ');\n';
+    }
+
+    if (typeId <= map.getTypeId('string')) {
+      outputString += ' '.repeat(indent + 4) + 'let ' + _outObj_item_out + ' = ' + _outObj_item_in + ';\n';
+    } else {
+      outputString += _decodeOneField(0, val[0], _outObj_item_in, _outObj_item_out, indent + 4, true, tagMap);
+    }
 
     outputString += ' '.repeat(indent + 4) + _outObj + '.push(' + _outObj_item_out + ');\n\n';
     outputString += ' '.repeat(indent + 2) + '}\n';
     outputString += ' '.repeat(indent) + '}\n';
 
-    outputString += ' '.repeat(indent) + outObj + '["' + key + '"] = ' + _outObj + ';\n\n';
+    if (!inArray) {
+      outputString += ' '.repeat(indent) + outObj + '["' + key + '"] = ' + _outObj + ';\n\n';
+    }
   }
   else if (typeof val === 'object') {
     if (!inArray) {
@@ -279,7 +296,7 @@ function _decodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
       outputString += decoder(key, inObj, outObj, indent);
       if (_infos.length > 1) {
         // store tag
-        outputString += ' '.repeat(indent) + tagMap + '["' + _infos[1].trim() + '"] = ' + outObj + ';\n';
+        outputString += ' '.repeat(indent) + tagMap + '["' + _infos[1].trim() + '"] = ' + outObj + '["' + key + '"];\n';
       }
     } else {
       if (!inArray) {
@@ -302,11 +319,11 @@ function _decodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
 
         outputString += ' '.repeat(indent + 2) + 'let ' + _macroFileName + ' = require("' + _macroFile + '");\n';
         outputString += ' '.repeat(indent + 2) + 'let ' + _macroTypeName + ' = ' + _macroFileName + '["' + _macroType + '"];\n';
-        outputString += ' '.repeat(indent + 2) + 'let ' + _parser + ' = require(' + _macroTypeName + '[' + tagMap + '["' + _infos[1].trim() + '"]' + ']' + ');\n';
+        outputString += ' '.repeat(indent + 2) + 'let ' + _parser + ' = require(' + _macroTypeName + '[' + tagMap + '["' + _infos[1].trim() + '"]' + ']' + ' + "Parser"' + ');\n';
       } else {
         outputString += ' '.repeat(indent + 2) + 'let ' + _parser + ' = require("' + _type + 'Parser' + '");\n';
       }
-      
+
       outputString += ' '.repeat(indent + 2) + _outObj + ' = ' + _parser + '.decode(' + _inObj + ', ' + tagMap + ');\n';
       outputString += ' '.repeat(indent) + '}\n';
 
@@ -321,7 +338,7 @@ function _decodeOneField(key, val, inObj, outObj, indent, inArray = false, tagMa
 
 let _generateCommon = function (data, outputDir, recordFileMap) {
   mkdir.mkdir(outputDir);
-  
+
   if (data.__common != null) {
     let keys = Object.keys(data.__common);
     for (let i = 0; i < keys.length; i++) {
@@ -348,7 +365,7 @@ let _generateCommon = function (data, outputDir, recordFileMap) {
       let _keys = Object.keys(val);
 
       outputString += '  let ' + _outObj + ' = new SFS2X.SFSObject();\n';
-      outputString += '  let ' + _outObj_tag + ' = tagMap || {};\n';      
+      outputString += '  let ' + _outObj_tag + ' = tagMap || {};\n';
       for (let i = 0; i < _keys.length; i++) {
         let _key = _keys[i];
         let _val = val[_key];
@@ -433,14 +450,14 @@ let _generateRPC = function (data, outputDir, recordFileMap) {
         outputString += '    return ' + _outObj + ';\n';
         outputString += '  },\n';
         outputString += '}\n';
-        outputString += 'module.exports[req] = _req;\n\n';
+        outputString += 'module.exports["req"] = _req;\n\n';
       }
 
       // deal __rsp
       if (val.__rsp != null) {
         let _outObj = key + '_rsp';
         let _outObj_tag = _outObj + '_tag';
-        
+
         let _keys = Object.keys(val.__rsp);
 
         outputString += 'let _rsp = {\n';
@@ -469,7 +486,7 @@ let _generateRPC = function (data, outputDir, recordFileMap) {
         outputString += '    return ' + _outObj + ';\n';
         outputString += '  },\n';
         outputString += '}\n';
-        outputString += 'module.exports[rsp] = _rsp;\n\n';
+        outputString += 'module.exports["rsp"] = _rsp;\n\n';
       }
 
       //write to file

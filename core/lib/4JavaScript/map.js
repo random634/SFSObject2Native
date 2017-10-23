@@ -40,17 +40,29 @@ let typeIdMap = {
   array_float: 14,
   array_double: 15,
   array_string: 16,
-  object: 17,
-  array: 18,
+  array: 17,
+  object: 18,
   class: 19
 };
 
 let _commonEncoder = function (key, val, outObj, typeId, indent = 0, inArray = false) {
   let outString = '';
-  if (!inArray) {
-    outString += ' '.repeat(indent) + outObj + '.put("' + key + '", ' + val + ', ' + typeId + ');\n';
+
+  let tval = '';
+  if (typeId === typeIdMap['bool']) {
+    tval = val + ' || false';
+  } else if (typeId > typeIdMap['bool'] && typeId < typeIdMap['string']) {
+    tval = val + ' || 0';
+  } else if (typeId === typeIdMap['string']) {
+    tval = val + ' || ""';
   } else {
-    outString += ' '.repeat(indent) + outObj + '.add(' + val + ', ' + typeId + ');\n';
+    tval = val;
+  }
+
+  if (!inArray) {
+    outString += ' '.repeat(indent) + outObj + '.put("' + key + '", ' + tval + ', ' + typeId + ');\n';
+  } else {
+    outString += ' '.repeat(indent) + outObj + '.add(' + tval + ', ' + typeId + ');\n';
   }
 
   return outString;
@@ -58,6 +70,7 @@ let _commonEncoder = function (key, val, outObj, typeId, indent = 0, inArray = f
 
 let _commonDecoder = function (key, inObj, outObj, typeId = null, indent = 0, isMid = false) {
   let outString = '';
+
   let _prefix = '';
   let _outKey = '["' + key + '"]';
   if (isMid) {
@@ -65,7 +78,18 @@ let _commonDecoder = function (key, inObj, outObj, typeId = null, indent = 0, is
     _outKey = '';
   }
 
-  outString += ' '.repeat(indent) + _prefix + outObj + _outKey + ' = ' + inObj + '.get("' + key + '", ' + typeId + ');\n';
+  let _suffix = '';
+  if (typeId === typeIdMap['bool']) {
+    _suffix = ' || false';
+  } else if (typeId > typeIdMap['bool'] && typeId < typeIdMap['string']) {
+    _suffix = ' || 0';
+  } else if (typeId === typeIdMap['string']) {
+    _suffix = ' || ""';
+  } else {
+    _suffix = '';
+  }
+
+  outString += ' '.repeat(indent) + _prefix + outObj + _outKey + ' = ' + inObj + '.get("' + key + '", ' + typeId + ')' + _suffix + ';\n';
   
   return outString;
 };
@@ -107,7 +131,7 @@ let _getDecoder = function (type) {
           _outKey = '';
         }
 
-        outString += ' '.repeat(indent) + outObj + _outKey + ' = ' + inObj + '.get("' + key + '");\n';
+        outString += ' '.repeat(indent) + outObj + _outKey + ' = ' + inObj + '.get("' + key + '") || 0;\n';
         
         return outString;
       }
