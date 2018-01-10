@@ -3,6 +3,8 @@
  * @author lingo(random634@163.com)
  */
 
+let utils = require('../../common/utils')
+
 // __type 可以为如下字符串内容：
 // bool, byte, short, int, long, float, double, number, string, {}, []
 // 这两个__type比较特殊
@@ -43,110 +45,110 @@ let typeIdMap = {
   array: 17,
   object: 18,
   class: 19
-};
+}
 
 let _commonEncoder = function (key, val, outObj, typeId, indent = 0, inArray = false) {
-  let outString = '';
+  let outString = ''
 
-  let tval = '';
+  let tval = ''
   if (typeId === typeIdMap['bool']) {
-    tval = val + ' || false';
+    tval = val + ' || false'
   } else if (typeId > typeIdMap['bool'] && typeId < typeIdMap['string']) {
-    tval = val + ' || 0';
+    tval = val + ' || 0'
   } else if (typeId === typeIdMap['string']) {
-    tval = val + ' || ""';
+    tval = val + ' || ""'
   } else {
-    tval = val;
+    tval = val
   }
 
   if (!inArray) {
-    outString += ' '.repeat(indent) + outObj + '.put("' + key + '", ' + tval + ', ' + typeId + ');\n';
+    outString += ' '.repeat(indent) + utils.strfmt('{0}.put("{1}", {2}, {3});\n', outObj, key, tval, typeId)
   } else {
-    outString += ' '.repeat(indent) + outObj + '.add(' + tval + ', ' + typeId + ');\n';
+    outString += ' '.repeat(indent) + utils.strfmt('{0}.add({1}, {2});\n', outObj, tval, typeId)
   }
 
-  return outString;
-};
+  return outString
+}
 
 let _commonDecoder = function (key, inObj, outObj, typeId = null, indent = 0, isMid = false) {
-  let outString = '';
+  let outString = ''
 
-  let _prefix = '';
-  let _outKey = '["' + key + '"]';
+  let _prefix = ''
+  let _outKey = utils.strfmt('["{0}"]', key)
   if (isMid) {
-    _prefix = 'let ';
-    _outKey = '';
+    _prefix = 'let '
+    _outKey = ''
   }
 
-  let _suffix = '';
+  let _suffix = ''
   if (typeId === typeIdMap['bool']) {
-    _suffix = ' || false';
+    _suffix = ' || false'
   } else if (typeId > typeIdMap['bool'] && typeId < typeIdMap['string']) {
-    _suffix = ' || 0';
+    _suffix = ' || 0'
   } else if (typeId === typeIdMap['string']) {
-    _suffix = ' || ""';
+    _suffix = ' || ""'
   } else {
-    _suffix = '';
+    _suffix = ''
   }
 
-  outString += ' '.repeat(indent) + _prefix + outObj + _outKey + ' = ' + inObj + '.get("' + key + '", ' + typeId + ')' + _suffix + ';\n';
-  
-  return outString;
-};
+  outString += ' '.repeat(indent) + utils.strfmt('{0} = {1}.get("{2}", {3}){4};\n', _prefix + outObj + _outKey, inObj, key, typeId, _suffix)
+
+  return outString
+}
 
 let _getEncoder = function (type) {
   if (typeIdMap[type] != null) {
     return function (key, val, outObj, indent = 0, inArray = false) {
-      return _commonEncoder(key, val, outObj, typeIdMap[type], indent, inArray);
+      return _commonEncoder(key, val, outObj, typeIdMap[type], indent, inArray)
     }
   } else {
     if (type === 'number') {
-      // it's just fit my need, you can change it to fit yours   
+      // it's just fit my need, you can change it to fit yours
       return function (key, val, outObj, indent = 0, inArray = false) {
-        let outString = '';
-        outString += ' '.repeat(indent) + 'if (!!(' + val + ' % 1)) {\n';
-        outString += _commonEncoder(key, val, outObj, typeIdMap['float'], indent + 2, inArray);
-        outString += ' '.repeat(indent) + '} else {\n';
-        outString += _commonEncoder(key, val, outObj, typeIdMap['int'], indent + 2, inArray);
-        outString += ' '.repeat(indent) + '};\n';
+        let outString = ''
+        outString += ' '.repeat(indent) + utils.strfmt('if (!!({0} % 1)) {\n', val)
+        outString += _commonEncoder(key, val, outObj, typeIdMap['float'], indent + 2, inArray)
+        outString += ' '.repeat(indent) + '} else {\n'
+        outString += _commonEncoder(key, val, outObj, typeIdMap['int'], indent + 2, inArray)
+        outString += ' '.repeat(indent) + '};\n'
 
-        return outString;
+        return outString
       }
     }
-    return null;
+    return null
   }
-};
+}
 
 let _getDecoder = function (type) {
   if (typeIdMap[type] != null) {
     return function (key, inObj, outObj, indent = 0, isMid = false) {
-      return _commonDecoder(key, inObj, outObj, typeIdMap[type], indent, isMid);
+      return _commonDecoder(key, inObj, outObj, typeIdMap[type], indent, isMid)
     }
   } else {
     if (type === 'number') {
       return function (key, inObj, outObj, indent = 0, isMid = false) {
-        let outString = '';
-        let _outKey = '["' + key + '"]';
+        let outString = ''
+        let _outKey = '["' + key + '"]'
         if (isMid) {
-          _outKey = '';
+          _outKey = ''
         }
 
-        outString += ' '.repeat(indent) + outObj + _outKey + ' = ' + inObj + '.get("' + key + '") || 0;\n';
-        
-        return outString;
+        outString += ' '.repeat(indent) + utils.strfmt('{0} = {1}.get("{2}") || 0;\n', outObj + _outKey, inObj, key)
+
+        return outString
       }
     } else {
-      return null;
+      return null
     }
   }
-};
+}
 
 let _getTypeId = function (type) {
-  return typeIdMap[type];
+  return typeIdMap[type]
 }
 
 module.exports = {
   getEncoder: _getEncoder,
   getDecoder: _getDecoder,
-  getTypeId: _getTypeId,
+  getTypeId: _getTypeId
 }

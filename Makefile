@@ -18,6 +18,6 @@ all: $(IN_FILE)
 	done;
 
 clean: 
-	rm -rf $(OUT_DIR)
-	rm -rf $(RECORD_DIR)
+	find $(OUT_DIR) -name '*.js' -exec rm {} \;
+	find $(RECORD_DIR) -name '*.json' -exec rm {} \;
 	node $(BIN) clear
