@@ -4,6 +4,7 @@ let path = require('path')
 module.exports = {
   mkdir: mkdir,
   deldir: deldir,
+  walkdir: walkdir,
   strfmt: strfmt,
   delcomment: delcomment
 }
@@ -38,6 +39,30 @@ function deldir (dir) {
     fs.rmdirSync(dir)
   } else {
     fs.unlinkSync(dir)
+  }
+}
+
+// walk a dir
+function walkdir (dir, func) {
+  if (!fs.existsSync(dir)) {
+    return
+  }
+
+  if (!fs.statSync(dir).isDirectory()) {
+    func(dir)
+    return
+  }
+
+  let files = fs.readdirSync(dir)
+  for (let i = 0; i < files.length; i++) {
+    let file = files[i]
+    let filePath = path.join(dir, file)
+    if (fs.statSync(filePath).isDirectory()) {
+      func(filePath)
+      walkdir(filePath, func)
+    } else {
+      func(filePath)
+    }
   }
 }
 

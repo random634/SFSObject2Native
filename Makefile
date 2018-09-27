@@ -1,9 +1,10 @@
 LIB_DIR = $(shell find ./core -type d)
-#IN_FILE = $(shell find ./protoTest -name "*.json")
 IN_FILE = $(shell find ./proto -name "*.json")
+TMP_DIR = ./tmp
 OUT_DIR = ./output
 RECORD_DIR = ./record
 BIN = ./core/main.js
+CP = ./cp.js
 
 .PHONY: all
 
@@ -14,8 +15,11 @@ all: $(IN_FILE)
 	@#$(foreach file, $(IN_FILE), node $(BIN) $(file) $(OUT_DIR);)	
 	@for file in $(IN_FILE); do \
 		echo dealFile: $$file; \
-		node $(BIN) $$file $(OUT_DIR); \
+		node $(BIN) $$file $(TMP_DIR); \
 	done;
+
+	@#do the cp thing
+	node $(CP) $(TMP_DIR) $(OUT_DIR)
 
 clean: 
 	find $(OUT_DIR) -name '*.js' -exec rm {} \;
